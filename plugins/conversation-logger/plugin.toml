@@ -34,3 +34,6 @@ description = "Registra todas las conversaciones en archivos JSONL para auditor√
 [i18n.fr]
 name = "Journal de conversations"
 description = "Enregistre toutes les conversations en JSONL pour audit, analytics et d√©bogage."
+
+[integrity]
+"hooks/after_turn.py" = "19a008af65e6797186ac0cc5b88e6d3c889fb1e312a099d65b9e10ee749eb65e"

@@ -34,3 +34,6 @@ description = "Analiza el sentimiento de los mensajes del usuario e inyecta cont
 [i18n.fr]
 name = "Suivi de sentiment"
 description = "Analyse le sentiment des messages utilisateur et injecte un contexte émotionnel pour que l'agent réponde avec le bon ton."
+
+[integrity]
+"hooks/ingest.py" = "1ce4a89e6b3de86d236d54d60b96b6fffb8306616666aef4802ba690ca8ae225"

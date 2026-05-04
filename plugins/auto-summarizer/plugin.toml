@@ -35,3 +35,7 @@ description = "Mantiene un resumen continuo de la conversación para que los age
 [i18n.fr]
 name = "Auto-résumé"
 description = "Maintient un résumé continu de la conversation pour que les agents ne perdent pas de contexte dans les longs échanges."
+
+[integrity]
+"hooks/after_turn.py" = "fe24d5f8dd85348f855f7e2c27e607e57c4fad549d50d814101be14fa5ab34f1"
+"hooks/ingest.py" = "0581dd415457bffc3160580acf3036a2fe9e211e86b49bbc51cc30118dc67e0e"

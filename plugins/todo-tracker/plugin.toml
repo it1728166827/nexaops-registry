@@ -35,3 +35,7 @@ description = "Detecta tareas y acciones mencionadas en las conversaciones, las 
 [i18n.fr]
 name = "Suivi de tâches"
 description = "Détecte les actions et tâches mentionnées dans les conversations, les persiste et les rappelle comme contexte."
+
+[integrity]
+"hooks/after_turn.py" = "5c9b524e0c2880152ddad2fcebb6cbe6fc548e3030871d2805a9a789eed80fdc"
+"hooks/ingest.py" = "1cd6a11c07e94dd34bb335f21c19c353b74016ba67a0ebd9bd4cd7cbf227705f"

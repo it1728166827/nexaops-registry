@@ -116,10 +116,9 @@ description = "Prune drawers older than this many days when running hooks/prune.
 # ---------------------------------------------------------------------------
 
 [integrity]
-"hooks/ingest.py" = "621b17f2d0afbd6142a49963fb57187a500cfeac057c13cb80961b6222bd03e2"
 "hooks/after_turn.py" = "1c5bcdade4ca0d785878d60910105208fcff38f74872426ee821363ce5bf9811"
+"hooks/ingest.py" = "621b17f2d0afbd6142a49963fb57187a500cfeac057c13cb80961b6222bd03e2"
 "hooks/prune.py" = "2dceeb9bb0d0b7ee224291bfce600f629f38b4a853cd437774d9b66ef226838d"
-
 
 [i18n.zh]
 name = "MemPalace 索引器"

@@ -34,3 +34,6 @@ description = "Detecta patrones de contenido potencialmente dañinos e inyecta a
 [i18n.fr]
 name = "Garde-fous"
 description = "Détecte les motifs de contenu potentiellement nuisibles et injecte des avertissements dans le contexte de l'agent."
+
+[integrity]
+"hooks/ingest.py" = "ed4920a0db5366fabce6a78e39c21ae1e0fd46549804fb63e5d3e87e38133378"

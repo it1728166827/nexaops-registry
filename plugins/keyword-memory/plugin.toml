@@ -34,3 +34,6 @@ description = "Extrae palabras clave y entidades de los mensajes del usuario y l
 [i18n.fr]
 name = "Mémoire par mots-clés"
 description = "Extrait mots-clés et entités nommées des messages utilisateur et les restitue comme mémoire contextuelle."
+
+[integrity]
+"hooks/ingest.py" = "6e9de6524c394e6879e4ab694dfdfbffb2bd423c3df2ef374dd59bf006836330"

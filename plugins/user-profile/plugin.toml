@@ -35,3 +35,7 @@ description = "Perfilado persistente del usuario a partir de patrones de convers
 [i18n.fr]
 name = "Profil utilisateur"
 description = "Profilage persistant basé sur les motifs de conversation pour des réponses personnalisées."
+
+[integrity]
+"hooks/after_turn.py" = "e1e12c2e6a3e32e2c26b4184836229f7f6cb32b0e14fcca82496354ff3b36f73"
+"hooks/ingest.py" = "28ae3b2435b6e46ef7bfd71b913f2e8c96d1a89120b48eb4cd54ceaefc18501b"

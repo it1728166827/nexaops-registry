@@ -35,3 +35,7 @@ description = "Segmentación y recuerdo de memoria por episodios para continuida
 [i18n.fr]
 name = "Mémoire épisodique"
 description = "Segmentation et rappel de mémoire par épisodes pour une continuité de contexte entre conversations."
+
+[integrity]
+"hooks/after_turn.py" = "b3adcfd2d5032a849a69722f64260802b70b01f54719e67cbe46db4e4214d9f3"
+"hooks/ingest.py" = "c33c0888b86a6f2058ceb1a0062420fd433a5c971e4abc44faccb1b775b0c1f5"

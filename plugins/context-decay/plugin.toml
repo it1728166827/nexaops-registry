@@ -35,3 +35,7 @@ description = "Decaimiento de memoria basado en el tiempo con puntuación de rel
 [i18n.fr]
 name = "Déclin du contexte"
 description = "Déclin de mémoire basé sur le temps avec scoring de pertinence pour un oubli naturel."
+
+[integrity]
+"hooks/after_turn.py" = "eb7801807e444bd9b804ee6c3b8b6cc68e29f08c3368f3d92e8047654eb0665b"
+"hooks/ingest.py" = "f9a82df0a460720d9888f179c31e8be0afd9b4dbc90329988e5347f9b7acf941"

@@ -35,3 +35,7 @@ description = "Recuerdo de memoria consciente del tema con agrupamiento de palab
 [i18n.fr]
 name = "Mémoire par sujets"
 description = "Rappel de mémoire orienté sujet avec clustering de mots-clés pour un contexte inter-conversations."
+
+[integrity]
+"hooks/after_turn.py" = "d2a52d8070250c6308de1af8739dfee0691b4dc73ee45448f32b7ed446645d28"
+"hooks/ingest.py" = "9ee56481f5b7039a12d4a6f373b7f54af7ead8f790995280551739658997cc0f"
