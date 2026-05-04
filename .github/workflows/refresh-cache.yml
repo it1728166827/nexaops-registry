@@ -1,26 +1,34 @@
 name: Refresh registry-worker cache
 
-# On every push that changes plugins/, regenerate plugins-index.json
-# (the daemon-shaped flat array the registry-worker signs and the
-# librefang daemon installs from), commit it back, then poke the
-# worker's forced-refresh endpoint so it re-signs the new bytes
-# immediately — without this, daemon installs lag up to ~24h behind
-# the next 02:00 UTC cron tick.
+# On every push that changes any registry content, regenerate the two
+# in-repo indexes the registry-worker ingests:
+#   plugins-index.json  — daemon-shaped flat plugins array (signed)
+#   registry-index.json — dict-shaped dashboard payload (unsigned)
+# then poke the worker's forced-refresh endpoint so it pulls both
+# (2 subrequests total, regardless of registry size — important under
+# Workers Free's 50-subrequest budget) and re-signs / stores them.
 #
-# Walking the on-disk repo (instead of the worker hitting GitHub
-# Contents API per-file) keeps the worker's refresh path under the
-# Workers Free 50-subrequest budget regardless of registry size.
+# Without this, dashboard + daemon would have to wait for the next
+# 02:00 UTC cron tick to see content changes (up to ~24h delay).
 
 on:
   push:
     branches: [main]
     paths:
       - 'plugins/**'
+      - 'agents/**'
+      - 'skills/**'
+      - 'hands/**'
+      - 'channels/**'
+      - 'providers/**'
+      - 'workflows/**'
+      - 'mcp/**'
       - 'scripts/build-plugins-index.mjs'
-  workflow_dispatch: # manual trigger for ops / first-deploy
+      - 'scripts/build-registry-index.mjs'
+  workflow_dispatch:
 
 permissions:
-  contents: write   # needed to commit the regenerated index back
+  contents: write   # commit regenerated index files back
 
 jobs:
   refresh:
@@ -32,18 +40,20 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Rebuild plugins-index.json
-        run: node scripts/build-plugins-index.mjs
+      - name: Rebuild indexes
+        run: |
+          node scripts/build-plugins-index.mjs
+          node scripts/build-registry-index.mjs
 
-      - name: Commit regenerated index if changed
+      - name: Commit regenerated indexes if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add plugins-index.json
+          git add plugins-index.json registry-index.json
           if git diff --cached --quiet; then
-            echo "plugins-index.json already up-to-date"
+            echo "indexes already up-to-date"
           else
-            git commit -m "chore: regenerate plugins-index.json"
+            git commit -m "chore: regenerate registry indexes"
             git push
           fi
 
