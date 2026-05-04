@@ -1,0 +1,31 @@
+# CODEOWNERS for librefang-registry
+#
+# A push to main can trigger the registry-worker forced-refresh and have
+# whatever's in plugins-index.json signed by the registry's Ed25519 key
+# (REGISTRY_PRIVATE_KEY in this repo's GitHub Actions store). Branch
+# protection alone doesn't constrain WHICH files a maintainer can land —
+# CODEOWNERS does.
+#
+# Files listed here REQUIRE explicit approval from the listed owners
+# before a PR can land. The signing infrastructure (workflow + script)
+# and the artefacts it produces (committed indexes + signature) carry
+# the highest sensitivity. Plugin contributions under plugins/<name>/
+# are owned by the plugin author but still go through PR review.
+#
+# Branch protection on `main` MUST be configured to:
+#   - require pull request reviews (at least 1)
+#   - require review from CODEOWNERS
+#   - dismiss stale approvals on new commits
+#   - restrict who can push directly to main (org admins only)
+
+# ---- Signing infrastructure (highest sensitivity) ----
+/scripts/sign-plugins-index.mjs    @suzukaze-haduki
+/scripts/build-plugins-index.mjs   @suzukaze-haduki
+/scripts/build-registry-index.mjs  @suzukaze-haduki
+/.github/workflows/                @suzukaze-haduki
+/.github/CODEOWNERS                @suzukaze-haduki
+
+# ---- Auto-generated artefacts (must not be hand-edited) ----
+/plugins-index.json                @suzukaze-haduki
+/plugins-index.json.sig            @suzukaze-haduki
+/registry-index.json               @suzukaze-haduki

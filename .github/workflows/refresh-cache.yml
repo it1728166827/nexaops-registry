@@ -5,11 +5,38 @@ name: Refresh registry-worker cache
 #   plugins-index.json  — daemon-shaped flat plugins array (signed)
 #   registry-index.json — dict-shaped dashboard payload (unsigned)
 # then poke the worker's forced-refresh endpoint so it pulls both
-# (2 subrequests total, regardless of registry size — important under
-# Workers Free's 50-subrequest budget) and re-signs / stores them.
+# (3 subrequests total, regardless of registry size — fits Workers
+# Free's 50-subrequest budget) and stores them.
 #
 # Without this, dashboard + daemon would have to wait for the next
 # 02:00 UTC cron tick to see content changes (up to ~24h delay).
+#
+# === SECURITY MODEL ===
+#
+# REGISTRY_PRIVATE_KEY (Ed25519 PKCS#8) is the trust root for every
+# `librefang plugin install <name>` worldwide. Threats and mitigations:
+#
+#   1. Compromised maintainer pushes a malicious plugins-index.json
+#      directly to main. Mitigation: GitHub branch protection on `main`
+#      requires PR review (admin-configured); .github/CODEOWNERS forces
+#      sign-script and committed-artefact changes through the registry
+#      owner.
+#
+#   2. Malicious PR adds a step that exfiltrates the secret. Mitigation:
+#      .github/CODEOWNERS owns this file; can't be modified without
+#      registry-owner approval. Action versions are SHA-pinned to block
+#      action-supply-chain attacks (transitive `uses:` swap).
+#
+#   3. Sign step writes garbage. Mitigation: post-sign verify step
+#      validates the signature against the corresponding pubkey before
+#      committing — a malformed sign-script run is caught here, not
+#      after publish.
+#
+#   4. Worker secret REGISTRY_REFRESH_TOKEN leaked. Mitigation: worker
+#      no longer holds signing material (PR #4600), so a leaked token
+#      lets an attacker trigger refreshes against existing committed
+#      bytes — they can't substitute attacker-supplied bytes for the
+#      worker to sign.
 
 on:
   push:
@@ -25,6 +52,7 @@ on:
       - 'mcp/**'
       - 'scripts/build-plugins-index.mjs'
       - 'scripts/build-registry-index.mjs'
+      - 'scripts/sign-plugins-index.mjs'
   workflow_dispatch:
 
 permissions:
@@ -34,9 +62,11 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # SHA-pinned to block action-supply-chain swaps. Update with care
+      # (read the diff between current and target SHA upstream).
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: '20'
 
@@ -45,10 +75,46 @@ jobs:
           node scripts/build-plugins-index.mjs
           node scripts/build-registry-index.mjs
 
+      # REGISTRY_PRIVATE_KEY is scoped to ONLY this step's env so prior
+      # build steps and later trigger steps cannot read it. Keep this
+      # narrow; do NOT lift the env to the job level.
       - name: Sign plugins-index.json
         env:
           REGISTRY_PRIVATE_KEY: ${{ secrets.REGISTRY_PRIVATE_KEY }}
         run: node scripts/sign-plugins-index.mjs
+
+      # Defense in depth: verify the signature locally against the
+      # public key (committed in this repo as REGISTRY_PUBLIC_KEY env)
+      # before the .sig hits main. Catches a buggy or tampered
+      # sign-script run; closes PR re-review on the in-repo signing
+      # path. No secret material here.
+      - name: Verify signature against committed pubkey
+        env:
+          REGISTRY_PUBLIC_KEY: ClGa0Ucap8NdrKAy1rw9Tt6A9I8eg4zJ53+xIuKMuq0=
+        run: |
+          node -e '
+            const c = require("crypto"), fs = require("fs");
+            const idx = fs.readFileSync("plugins-index.json");
+            const sig = Buffer.from(
+              fs.readFileSync("plugins-index.json.sig", "utf8").trim(),
+              "base64",
+            );
+            const pub = Buffer.from(process.env.REGISTRY_PUBLIC_KEY, "base64");
+            if (pub.length !== 32) {
+              console.error("REGISTRY_PUBLIC_KEY is not a raw 32-byte Ed25519 pubkey");
+              process.exit(1);
+            }
+            const spki = Buffer.concat([
+              Buffer.from("302a300506032b6570032100", "hex"),
+              pub,
+            ]);
+            const k = c.createPublicKey({ key: spki, format: "der", type: "spki" });
+            if (!c.verify(null, idx, k, sig)) {
+              console.error("plugins-index.json.sig does NOT verify against the committed pubkey");
+              process.exit(1);
+            }
+            console.log("Signature verifies OK against committed pubkey.");
+          '
 
       - name: Commit regenerated indexes if changed
         run: |
