@@ -22,12 +22,12 @@
 # Anything that influences the bytes that get signed, OR the signing
 # step itself, requires owner approval. Build-script edits change the
 # bytes that get signed even though they don't touch the sign step.
-/scripts/                          @suzukaze-haduki
-/.github/workflows/                @suzukaze-haduki
-/.github/CODEOWNERS                @suzukaze-haduki
-/wrangler.toml                     @suzukaze-haduki
+/scripts/                          @houko
+/.github/workflows/                @houko
+/.github/CODEOWNERS                @houko
+/wrangler.toml                     @houko
 
 # ---- Auto-generated artefacts (must not be hand-edited) ----
-/plugins-index.json                @suzukaze-haduki
-/plugins-index.json.sig            @suzukaze-haduki
-/registry-index.json               @suzukaze-haduki
+/plugins-index.json                @houko
+/plugins-index.json.sig            @houko
+/registry-index.json               @houko
