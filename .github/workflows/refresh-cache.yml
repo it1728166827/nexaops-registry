@@ -83,11 +83,15 @@ jobs:
           REGISTRY_PRIVATE_KEY: ${{ secrets.REGISTRY_PRIVATE_KEY }}
         run: node scripts/sign-plugins-index.mjs
 
-      # Defense in depth: verify the signature locally against the
-      # public key (committed in this repo as REGISTRY_PUBLIC_KEY env)
-      # before the .sig hits main. Catches a buggy or tampered
-      # sign-script run; closes PR re-review on the in-repo signing
-      # path. No secret material here.
+      # Defense in depth: verify the signature against the committed
+      # pubkey before the .sig hits main. This catches an *accidental*
+      # sign-script regression — a malformed signature, an env-leak that
+      # produces zero bytes, an off-by-one in the JSON canonicalization.
+      # It does NOT defend against an adversary, because an attacker
+      # who can edit sign-plugins-index.mjs in a PR can edit this verify
+      # step and the embedded pubkey in the same diff. The CODEOWNERS
+      # gate on `/scripts/` and `/.github/workflows/` is what stops
+      # adversarial edits, not this step.
       - name: Verify signature against committed pubkey
         env:
           REGISTRY_PUBLIC_KEY: ClGa0Ucap8NdrKAy1rw9Tt6A9I8eg4zJ53+xIuKMuq0=

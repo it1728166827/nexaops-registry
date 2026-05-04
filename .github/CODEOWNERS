@@ -19,11 +19,13 @@
 #   - restrict who can push directly to main (org admins only)
 
 # ---- Signing infrastructure (highest sensitivity) ----
-/scripts/sign-plugins-index.mjs    @suzukaze-haduki
-/scripts/build-plugins-index.mjs   @suzukaze-haduki
-/scripts/build-registry-index.mjs  @suzukaze-haduki
+# Anything that influences the bytes that get signed, OR the signing
+# step itself, requires owner approval. Build-script edits change the
+# bytes that get signed even though they don't touch the sign step.
+/scripts/                          @suzukaze-haduki
 /.github/workflows/                @suzukaze-haduki
 /.github/CODEOWNERS                @suzukaze-haduki
+/wrangler.toml                     @suzukaze-haduki
 
 # ---- Auto-generated artefacts (must not be hand-edited) ----
 /plugins-index.json                @suzukaze-haduki
