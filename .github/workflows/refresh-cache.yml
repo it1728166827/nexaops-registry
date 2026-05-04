@@ -1,31 +1,52 @@
 name: Refresh registry-worker cache
 
-# Triggers the registry-worker to rebuild its D1 cache and re-sign the
-# plugins index right after content changes — without this, dashboard /
-# daemon would have to wait for the next 02:00 UTC cron tick.
+# On every push that changes plugins/, regenerate plugins-index.json
+# (the daemon-shaped flat array the registry-worker signs and the
+# librefang daemon installs from), commit it back, then poke the
+# worker's forced-refresh endpoint so it re-signs the new bytes
+# immediately — without this, daemon installs lag up to ~24h behind
+# the next 02:00 UTC cron tick.
 #
-# Auth: REGISTRY_REFRESH_TOKEN (repo secret) is matched against the
-# REGISTRY_REFRESH_TOKEN worker secret in librefang-registry. Until both
-# are set, the worker endpoint returns 503.
+# Walking the on-disk repo (instead of the worker hitting GitHub
+# Contents API per-file) keeps the worker's refresh path under the
+# Workers Free 50-subrequest budget regardless of registry size.
 
 on:
   push:
     branches: [main]
     paths:
       - 'plugins/**'
-      - 'agents/**'
-      - 'skills/**'
-      - 'hands/**'
-      - 'channels/**'
-      - 'providers/**'
-      - 'workflows/**'
-      - 'mcp/**'
-  workflow_dispatch: # manual trigger for ops
+      - 'scripts/build-plugins-index.mjs'
+  workflow_dispatch: # manual trigger for ops / first-deploy
+
+permissions:
+  contents: write   # needed to commit the regenerated index back
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Rebuild plugins-index.json
+        run: node scripts/build-plugins-index.mjs
+
+      - name: Commit regenerated index if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add plugins-index.json
+          if git diff --cached --quiet; then
+            echo "plugins-index.json already up-to-date"
+          else
+            git commit -m "chore: regenerate plugins-index.json"
+            git push
+          fi
+
       - name: Trigger worker refresh
         env:
           REGISTRY_REFRESH_TOKEN: ${{ secrets.REGISTRY_REFRESH_TOKEN }}
