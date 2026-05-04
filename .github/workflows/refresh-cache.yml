@@ -45,11 +45,16 @@ jobs:
           node scripts/build-plugins-index.mjs
           node scripts/build-registry-index.mjs
 
+      - name: Sign plugins-index.json
+        env:
+          REGISTRY_PRIVATE_KEY: ${{ secrets.REGISTRY_PRIVATE_KEY }}
+        run: node scripts/sign-plugins-index.mjs
+
       - name: Commit regenerated indexes if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add plugins-index.json registry-index.json
+          git add plugins-index.json plugins-index.json.sig registry-index.json
           if git diff --cached --quiet; then
             echo "indexes already up-to-date"
           else
