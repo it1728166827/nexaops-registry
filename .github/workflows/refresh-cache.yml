@@ -1,0 +1,46 @@
+name: Refresh registry-worker cache
+
+# Triggers the registry-worker to rebuild its D1 cache and re-sign the
+# plugins index right after content changes — without this, dashboard /
+# daemon would have to wait for the next 02:00 UTC cron tick.
+#
+# Auth: REGISTRY_REFRESH_TOKEN (repo secret) is matched against the
+# REGISTRY_REFRESH_TOKEN worker secret in librefang-registry. Until both
+# are set, the worker endpoint returns 503.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'plugins/**'
+      - 'agents/**'
+      - 'skills/**'
+      - 'hands/**'
+      - 'channels/**'
+      - 'providers/**'
+      - 'workflows/**'
+      - 'mcp/**'
+  workflow_dispatch: # manual trigger for ops
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger worker refresh
+        env:
+          REGISTRY_REFRESH_TOKEN: ${{ secrets.REGISTRY_REFRESH_TOKEN }}
+        run: |
+          if [ -z "$REGISTRY_REFRESH_TOKEN" ]; then
+            echo "::error::REGISTRY_REFRESH_TOKEN secret is not set on this repo"
+            exit 1
+          fi
+          response=$(curl -fsS -X POST \
+            -H "Authorization: Bearer $REGISTRY_REFRESH_TOKEN" \
+            -w "\nHTTP_CODE:%{http_code}" \
+            https://stats.librefang.ai/api/registry/refresh)
+          echo "$response"
+          code=$(echo "$response" | grep -oE 'HTTP_CODE:[0-9]+' | cut -d: -f2)
+          if [ "$code" != "200" ]; then
+            echo "::error::worker returned $code"
+            exit 1
+          fi
