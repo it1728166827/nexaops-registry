@@ -868,3 +868,435 @@ rm /tmp/restore.dump
 **Communication template**: Subject `[INCIDENT] Service -- Status`. Body: what happened, impact, current status, ETA, next update time.
 
 **Post-recovery checklist**: health checks passing, data integrity verified, monitoring restored, backups resumed, incident report filed, post-mortem scheduled within 48h.
+
+---
+
+## Auto-Evolution Workflow
+
+The Phase 7 evolution loop (gated by `auto_evolve = true`) periodically scans the repos listed in `evolution_repos` and takes one of three actions per item:
+
+- **Open PR** → review via the `code-reviewer` sub-agent, post a `COMMENT` review back to GitHub.
+- **Open Issue** → triage, then dispatch to the `implementer` sub-agent if actionable.
+- **Anything we've already processed at the same head_sha / issue revision** → skip.
+
+The pipeline never marks PRs ready-for-review and never pushes to protected branches. All produced PRs are drafts.
+
+### When the loop fires
+
+`schedule_create` registers a recurring trigger on `evolution_check_interval`. Each tick runs at most one full repo pass; if there's more work than fits in the token budget, the remainder waits for the next tick. The state cursor lives in `memory` so progress survives daemon restarts.
+
+### Memory keys this workflow owns
+
+| Key pattern | Stored value |
+|---|---|
+| `devops_pr_review_<owner>_<repo>_<num>` | `{ head_sha, verdict, timestamp }` — last review per PR |
+| `devops_issue_state_<owner>_<repo>_<num>` | `{ classification, pr_url, timestamp }` — last triage per issue |
+| `devops_evolution_cursor_<owner>_<repo>` | `{ last_tick_at, last_seen_pr, last_seen_issue }` |
+| `devops_hand_prs_reviewed` | counter — dashboard metric |
+| `devops_hand_issues_processed` | counter — dashboard metric |
+| `devops_hand_draft_prs_opened` | counter — dashboard metric |
+
+### Events this workflow publishes
+
+| Event name | Payload | When |
+|---|---|---|
+| `devops_evolution_pr_reviewed` | `{ pr_url, verdict, head_sha }` | After a PR review is posted to GitHub |
+| `devops_evolution_pr_opened` | `{ pr_url, issue_url, classification }` | After a draft PR is created from a triaged issue |
+| `devops_evolution_blocked` | `{ reason, pr_or_issue_url, retry_after }` | When a tick is aborted by safety floor, API failure, or hook rejection |
+| `devops_evolution_skipped` | `{ pr_or_issue_url, reason }` | When an item is skipped by cadence gate, label filter, or already-processed check |
+
+These are advisory; subscribers (dashboard, audit log, downstream Hands) are optional.
+
+---
+
+### Issue Triage Playbook
+
+The goal is to spend zero LLM tokens when labels are enough. LLM fallback is one prompt, never a multi-turn chain.
+
+**Step 1 -- Label-driven (deterministic)**
+
+```text
+Has any of {"bug", "defect", "regression", "broken"}        -> bug-fix
+Has any of {"feature", "enhancement", "rfc", "proposal"}    -> feature
+Has any of {"question", "discussion", "support"}            -> needs-info
+Has any of {"wontfix", "duplicate", "invalid", "stale"}     -> skip
+```
+
+**Step 2 -- LLM fallback (only when labels are absent)**
+
+Single classification prompt. Allowed outputs: exactly one of `bug-fix | feature | needs-info | skip`. Reject any longer answer and re-prompt once before defaulting to `needs-info`.
+
+```text
+You are classifying a GitHub issue for a DevOps Hand evolution pipeline.
+
+Output exactly ONE token from this set: bug-fix | feature | needs-info | skip
+
+Heuristics:
+- bug-fix:    user reports incorrect behavior, crash, regression, security issue,
+              or unexpected output of existing functionality.
+- feature:    user requests new capability, configuration option, or refactor
+              that ships user-visible value.
+- needs-info: report is ambiguous -- cannot reproduce, missing version/environment,
+              cannot tell if bug or feature.
+- skip:       issue is a question, off-topic, or already addressed.
+
+Issue title: {TITLE}
+Issue body:
+{BODY}
+Existing labels: {LABELS_OR_NONE}
+```
+
+**Step 3 -- Already-linked PR check**
+
+```bash
+# A PR already references this issue -> skip implementation, just review the PR
+curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+  "https://api.github.com/repos/OWNER/REPO/issues/NUM/timeline?per_page=50" \
+  | jq '.[] | select(.event == "cross-referenced") | .source.issue.pull_request.url'
+```
+
+---
+
+### PR Review Automation
+
+**Pull PR metadata + diff + files in three calls**
+
+```bash
+PR_URL="https://api.github.com/repos/OWNER/REPO/pulls/NUM"
+
+curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "$PR_URL" -o pr.json
+curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+     -H "Accept: application/vnd.github.v3.diff" \
+     "$PR_URL" -o pr.diff
+curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "$PR_URL/files?per_page=300" -o pr_files.json
+```
+
+**Short-circuit on bot / merge / huge diff**
+
+Extract the cheap signals from already-fetched PR metadata:
+
+```bash
+HEAD_SHA=$(jq -r .head.sha pr.json)
+USER_TYPE=$(jq -r .user.type pr.json)
+CHANGED=$(jq '. | length' pr_files.json)
+```
+
+Decision rules (the **agent** applies these in its loop, not the shell — `exit 0` would only end one `shell_exec`, not abort the Phase 7 pass):
+
+- **`USER_TYPE == "Bot"`** (dependabot, renovate, etc.): skip deep review for this PR. The agent then:
+  1. calls `memory_store devops_pr_review_<owner>_<repo>_<num>` with `{head_sha, verdict: "skipped_bot", timestamp}`
+  2. calls `event_publish devops_evolution_skipped` with `{pr_or_issue_url, reason: "bot author"}`
+  3. moves on to the next PR — does NOT dispatch the reviewer sub-agent.
+- **`CHANGED > 200`**: diff too large for the reviewer to ground usefully. The agent then:
+  1. calls `event_publish devops_evolution_skipped` with `{pr_or_issue_url, reason: "diff>200 files"}`
+  2. moves on to the next PR.
+
+**Dispatch to reviewer sub-agent**
+
+Hand the reviewer the diff, file list, PR description, and (if present) the target branch's `AGENTS.md` / `CONTRIBUTING.md`. Capture the reviewer's structured JSON into `reviewer_output.json` (whatever your routing primitive is — `subagent_invoke`, A2A call, or local fork — write the result to that file so the next shell snippet can read it):
+
+```json
+{
+  "verdict": "approve | request_changes | block | comment_only",
+  "issues": [
+    {"severity": "critical|major|minor", "file": "...", "line": 42, "body": "..."}
+  ],
+  "positives": ["..."],
+  "summary": "..."
+}
+```
+
+**Post a single review (not N inline comments)**
+
+```bash
+# Pull verdict + summary out of the reviewer's structured output.
+VERDICT=$(jq -r .verdict reviewer_output.json)
+SUMMARY_BODY=$(jq -r .summary reviewer_output.json)
+
+# Map verdict -> GitHub review event. Never auto-APPROVE.
+BODY_PREFIX=""
+case "$VERDICT" in
+  approve)
+    # Downgrade silent "approve" to advisory COMMENT — a human still merges.
+    EVENT="COMMENT"
+    ;;
+  request_changes)
+    EVENT="REQUEST_CHANGES"
+    ;;
+  block)
+    # Block is more severe than request_changes. We still post REQUEST_CHANGES
+    # (the strongest event we use), but flag the body so a human escalates.
+    EVENT="REQUEST_CHANGES"
+    BODY_PREFIX="**Reviewer flagged this PR as BLOCKING — please escalate to a maintainer before merge.**
+
+"
+    ;;
+  comment_only|*)
+    EVENT="COMMENT"
+    ;;
+esac
+SUMMARY_BODY="${BODY_PREFIX}${SUMMARY_BODY}"
+
+jq -n --arg event "$EVENT" --arg body "$SUMMARY_BODY" --arg sha "$HEAD_SHA" \
+  '{commit_id: $sha, event: $event, body: $body}' > review_payload.json
+
+curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d @review_payload.json \
+  "$PR_URL/reviews"
+```
+
+Body format -- keep tight; reviewers read this:
+
+```markdown
+**DevOps Hand -- automated review**
+
+**Verdict**: {verdict}
+
+**Summary**: {one paragraph}
+
+**Findings** ({N}):
+- [critical] {file}:{line} -- {body}
+- [major]    {file}:{line} -- {body}
+- [minor]    {file}:{line} -- {body}
+
+**What looks good**:
+- {positive 1}
+
+_Generated by DevOps Hand reviewer (commit: `{sha}`)._
+```
+
+---
+
+### Bug Fix Playbook
+
+The implementer runs this when `classification = "bug-fix"`. Sequence is rigid -- failing test first, fix second, refactor third.
+
+**Step 1 -- Reproduce**
+
+In the supplied worktree:
+
+```bash
+cd "$REPO_CONTEXT"
+git checkout -b "auto/bug-fix-${ISSUE_NUMBER}-${SLUG}"
+# Try to reproduce from the issue's repro steps. If they're absent, infer them.
+# If you cannot reproduce in 3 attempts, stop and surface to devops_queue.json.
+```
+
+**Step 2 -- Failing test first**
+
+```bash
+# For Rust workspaces, drop the test in the closest existing module's tests/.
+cargo test -p <crate> --test <existing_test_file> -- --nocapture --test-threads=1
+# Expect FAILURE. Commit the failing test:
+git add tests/ && git commit -m "test: reproduce #${ISSUE_NUMBER} -- <one-line>"
+```
+
+**Step 3 -- Minimal fix**
+
+Edit only the files needed to make the test pass. Run the project's full lint+test gate:
+
+```bash
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test -p <crate>                  # not --workspace -- target/ contention
+```
+
+**Step 4 -- Refactor (optional)**
+
+Only if step 3 left obvious smell (long fn, repeated literal, etc.). Skip if `bmad_strictness = "light"`.
+
+**Step 5 -- Commit and push (draft branch only)**
+
+```bash
+git add -A && git commit -m "fix: <subject> (#${ISSUE_NUMBER})"
+git push origin "auto/bug-fix-${ISSUE_NUMBER}-${SLUG}"
+```
+
+**Step 6 -- Open draft PR (see Draft PR Creation below)**
+
+---
+
+### BMAD Feature Pipeline
+
+Run when `classification = "feature"`. Phases scale with `bmad_strictness`:
+
+| Phase | `light` | `standard` | `strict` |
+|---|---|---|---|
+| B -- Brainstorm | skip | inline <=200 words | inline + queue gate |
+| A -- Architect | always | always | always + queue gate |
+| P -- PRD | skip | required | required + queue gate |
+| I -- Implement | always | always | always |
+
+Each phase output is appended to `BMAD.md` in the repo root of the feature branch. The file is committed along with the implementation so reviewers can see the reasoning.
+
+**BMAD.md template**
+
+````markdown
+# BMAD -- #{ISSUE_NUMBER}: {SHORT TITLE}
+
+## Brainstorm
+**Restated problem**: {one paragraph}
+
+**Approaches considered**:
+1. **{Name}** -- {sketch} -- files: {list} -- risk: {low/mid/high} -- diff: ~{N} LoC
+2. **{Name}** -- ...
+3. **{Name}** -- ...
+
+**Chosen**: #{N}. Rationale: {one paragraph}
+
+## Architecture
+**Crates / modules touched**: {list}
+
+**Types / signatures introduced or changed**:
+```rust
+// ...
+```
+
+**Cross-crate ripples**: {none / bounded list / escalated to queue: reason}
+
+## PRD
+**Acceptance criteria**
+- [ ] {behavior 1}
+- [ ] {behavior 2}
+
+**Test plan**
+- unit: `crates/{crate}/src/{path}.rs` -- {what it asserts}
+- integration: `crates/{crate}/tests/{name}.rs` -- {what it asserts}
+
+**Rollback plan**: {one paragraph}
+
+## Implementation Notes
+{anything a future reader needs to understand the diff but wouldn't see in code comments}
+````
+
+**Strict mode queue gate**
+
+Between each phase, write to `devops_queue.json`:
+
+```json
+{
+  "id": "bmad_${REPO}_${ISSUE}_${PHASE}",
+  "action": "bmad_phase_review",
+  "phase": "B|A|P|I",
+  "issue": "owner/repo#NUM",
+  "artifact_path": "BMAD.md",
+  "status": "pending",
+  "created": "ISO8601"
+}
+```
+
+Then **end the current turn**. The Hand is `frequency = "continuous"`, so the next tick will re-read `devops_queue.json`:
+
+- If the user (out-of-band) has flipped `status` to `approved`, resume from the next phase.
+- If still `pending`, skip this issue for this tick and re-check on the following one.
+- If flipped to `rejected`, abandon the issue, comment on it with the rejection rationale (if provided), and stop.
+
+Within a single turn, never poll or `sleep` waiting for approval — the agent loop has no in-turn pause primitive, and busy-waiting would block other Hand work and burn tokens. End the turn and let the kernel re-invoke you.
+
+---
+
+### Draft PR Creation
+
+The final action of both bug-fix and feature paths. **Always `draft: true`.**
+
+**Step 1 -- Push the branch (if not already)**
+
+```bash
+git push origin "auto/${CLASSIFICATION}-${ISSUE}-${SLUG}"
+```
+
+**Step 2 -- Compose the PR body**
+
+```markdown
+## Summary
+{one paragraph}
+
+## Linked Issue
+Closes #{ISSUE_NUMBER}
+
+## BMAD Pipeline Output
+{inline BMAD.md, or note that it's committed at `BMAD.md` in this PR}
+
+## Acceptance Checklist
+- [ ] {copied from PRD}
+
+## Risk
+{one paragraph -- what could go wrong, what's the blast radius}
+
+## Verification I ran locally
+- `cargo clippy --workspace --all-targets -- -D warnings` -- passed
+- `cargo test -p {crate}` -- passed
+- {anything project-specific from justfile / xtask}
+
+## Generated by
+DevOps Hand -> implementer  (strictness: {level})
+```
+
+**Step 3 -- Open the draft PR**
+
+First resolve the target branch. Don't assume `main` -- query the repo:
+
+```bash
+BASE_BRANCH=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+  "https://api.github.com/repos/${OWNER}/${REPO}" | jq -r .default_branch)
+# fallback in the unlikely case the API doesn't return one
+[ -z "$BASE_BRANCH" ] || [ "$BASE_BRANCH" = "null" ] && BASE_BRANCH="main"
+```
+
+Then create the draft PR:
+
+```bash
+jq -n \
+  --arg title "${PR_TITLE}" \
+  --arg body  "${PR_BODY}" \
+  --arg head  "auto/${CLASSIFICATION}-${ISSUE}-${SLUG}" \
+  --arg base  "${BASE_BRANCH}" \
+  '{title: $title, body: $body, head: $head, base: $base, draft: true}' \
+  > pr_create.json
+
+curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d @pr_create.json \
+  "https://api.github.com/repos/${OWNER}/${REPO}/pulls" \
+  -o pr_created.json
+
+PR_URL=$(jq -r .html_url pr_created.json)
+echo "Draft PR: $PR_URL"
+```
+
+**Step 4 -- Cross-link on the originating issue**
+
+Build the body in shell first so newlines survive (`jq --arg` is a literal-string
+parameter, it does NOT interpret backslash escapes):
+
+```bash
+ISSUE_COMMENT=$(printf 'Auto-implementation drafted: %s\n\n_Generated by DevOps Hand. Mark the PR ready-for-review when human triage agrees._' "$PR_URL")
+
+jq -n --arg body "$ISSUE_COMMENT" '{body: $body}' > issue_comment.json
+
+curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d @issue_comment.json \
+  "https://api.github.com/repos/${OWNER}/${REPO}/issues/${ISSUE_NUMBER}/comments"
+```
+
+**Step 5 -- Bump counters**
+
+```text
+memory_store devops_hand_draft_prs_opened (current + 1)
+memory_store devops_issue_state_${OWNER}_${REPO}_${ISSUE_NUMBER} = {classification, pr_url, timestamp}
+event_publish devops_evolution_pr_opened {pr_url, issue}
+```
+
+---
+
+### What this Hand does NOT do
+
+To set expectations for users and reviewers:
+
+- It does NOT merge PRs. A human always merges.
+- It does NOT mark draft PRs as ready-for-review.
+- It does NOT push to `main` / `master` / any protected branch.
+- It does NOT operate on private repos unless the configured GITHUB_TOKEN has explicit `repo` scope and the repo is in `evolution_repos`.
+- It does NOT modify `Cargo.toml` workspace members, migration files, secrets, or any path matching the safety floor in Phase 7.3 -- those escalate to `devops_queue.json` instead.
+- It does NOT consume more than 70% of the per-turn token budget in a single tick. Long jobs are picked up by subsequent ticks.
