@@ -547,3 +547,33 @@ max_output_tokens = 8192
 input_cost_per_m = 0.0
 output_cost_per_m = 0.0
 supports_streaming = true
+
+[[models]]
+id = "openrouter/inclusionai/ling-2.6-1t"
+display_name = "inclusionAI: Ling-2.6-1T (OpenRouter)"
+tier = "fast"
+context_window = 262144
+max_output_tokens = 32768
+input_cost_per_m = 0.3
+output_cost_per_m = 2.5
+supports_streaming = true
+
+[[models]]
+id = "openrouter/inclusionai/ring-2.6-1t"
+display_name = "inclusionAI: Ring-2.6-1T (OpenRouter)"
+tier = "fast"
+context_window = 262144
+max_output_tokens = 65536
+input_cost_per_m = 0.075
+output_cost_per_m = 0.625
+supports_streaming = true
+
+[[models]]
+id = "openrouter/perceptron/perceptron-mk1"
+display_name = "Perceptron: Perceptron Mk1 (OpenRouter)"
+tier = "fast"
+context_window = 32768
+max_output_tokens = 8192
+input_cost_per_m = 0.15
+output_cost_per_m = 1.5
+supports_streaming = true

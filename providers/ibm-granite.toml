@@ -14,5 +14,5 @@ tier = "fast"
 context_window = 131000
 max_output_tokens = 16384
 input_cost_per_m = 0.017
-output_cost_per_m = 0.11
+output_cost_per_m = 0.112
 supports_streaming = true
