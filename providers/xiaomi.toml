@@ -13,8 +13,8 @@ display_name = "Xiaomi: MiMo-V2.5"
 tier = "fast"
 context_window = 1048576
 max_output_tokens = 131072
-input_cost_per_m = 0.4
-output_cost_per_m = 2.0
+input_cost_per_m = 0.14
+output_cost_per_m = 0.28
 supports_streaming = true
 
 [[models]]
@@ -23,6 +23,6 @@ display_name = "Xiaomi: MiMo-V2.5-Pro"
 tier = "smart"
 context_window = 1048576
 max_output_tokens = 131072
-input_cost_per_m = 1.0
-output_cost_per_m = 3.0
+input_cost_per_m = 0.435
+output_cost_per_m = 0.87
 supports_streaming = true
