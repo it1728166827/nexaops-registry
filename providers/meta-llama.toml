@@ -24,7 +24,7 @@ display_name = "Meta: Llama 4 Scout"
 tier = "fast"
 context_window = 327680
 max_output_tokens = 16384
-input_cost_per_m = 0.08
+input_cost_per_m = 0.1
 output_cost_per_m = 0.3
 supports_streaming = true
 
