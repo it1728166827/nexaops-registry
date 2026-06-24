@@ -19,7 +19,7 @@ display_name = "Microsoft: Phi 4"
 tier = "fast"
 context_window = 16384
 max_output_tokens = 16384
-input_cost_per_m = 0.065
+input_cost_per_m = 0.07
 output_cost_per_m = 0.14
 supports_streaming = true
 

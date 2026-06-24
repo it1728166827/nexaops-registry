@@ -617,3 +617,13 @@ max_output_tokens = 262144
 input_cost_per_m = 0.5
 output_cost_per_m = 2.5
 supports_streaming = true
+
+[[models]]
+id = "openrouter/sakana/fugu-ultra"
+display_name = "Sakana: Fugu Ultra (OpenRouter)"
+tier = "frontier"
+context_window = 1000000
+max_output_tokens = 128000
+input_cost_per_m = 5.0
+output_cost_per_m = 30.0
+supports_streaming = true
