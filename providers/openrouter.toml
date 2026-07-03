@@ -627,3 +627,23 @@ max_output_tokens = 128000
 input_cost_per_m = 5.0
 output_cost_per_m = 30.0
 supports_streaming = true
+
+[[models]]
+id = "openrouter/poolside/laguna-xs-2.1"
+display_name = "Poolside: Laguna XS 2.1 (OpenRouter)"
+tier = "fast"
+context_window = 262144
+max_output_tokens = 32768
+input_cost_per_m = 0.06
+output_cost_per_m = 0.12
+supports_streaming = true
+
+[[models]]
+id = "openrouter/poolside/laguna-xs-2.1:free"
+display_name = "Poolside: Laguna XS 2.1 (free) (OpenRouter)"
+tier = "fast"
+context_window = 262144
+max_output_tokens = 32768
+input_cost_per_m = 0.0
+output_cost_per_m = 0.0
+supports_streaming = true
