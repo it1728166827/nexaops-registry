@@ -647,3 +647,13 @@ max_output_tokens = 32768
 input_cost_per_m = 0.0
 output_cost_per_m = 0.0
 supports_streaming = true
+
+[[models]]
+id = "openrouter/nex-agi/nex-n2-mini"
+display_name = "Nex AGI: Nex-N2-Mini (OpenRouter)"
+tier = "fast"
+context_window = 262144
+max_output_tokens = 262144
+input_cost_per_m = 0.025
+output_cost_per_m = 0.1
+supports_streaming = true
