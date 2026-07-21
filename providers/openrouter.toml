@@ -677,3 +677,13 @@ max_output_tokens = 16384
 input_cost_per_m = 1.0
 output_cost_per_m = 4.05
 supports_streaming = true
+
+[[models]]
+id = "openrouter/meituan/longcat-2.0"
+display_name = "Meituan: LongCat 2.0 (OpenRouter)"
+tier = "fast"
+context_window = 1048756
+max_output_tokens = 262144
+input_cost_per_m = 0.3
+output_cost_per_m = 1.2
+supports_streaming = true
