@@ -727,3 +727,23 @@ max_output_tokens = 16384
 input_cost_per_m = 0.5
 output_cost_per_m = 1.2
 supports_streaming = true
+
+[[models]]
+id = "openrouter/inclusionai/ling-3.0-flash"
+display_name = "Ling-3.0-flash (OpenRouter)"
+tier = "fast"
+context_window = 131072
+max_output_tokens = 16384
+input_cost_per_m = 0.075
+output_cost_per_m = 0.22
+supports_streaming = true
+
+[[models]]
+id = "openrouter/meta/muse-spark-1.2"
+display_name = "Meta: Muse Spark 1.2 (OpenRouter)"
+tier = "smart"
+context_window = 1048576
+max_output_tokens = 16384
+input_cost_per_m = 1.25
+output_cost_per_m = 4.25
+supports_streaming = true
