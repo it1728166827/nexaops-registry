@@ -767,3 +767,23 @@ max_output_tokens = 16384
 input_cost_per_m = 0.5
 output_cost_per_m = 2.025
 supports_streaming = true
+
+[[models]]
+id = "openrouter/meta/muse-glimmer-30b"
+display_name = "Meta: Muse Glimmer 30B (OpenRouter)"
+tier = "fast"
+context_window = 131072
+max_output_tokens = 16384
+input_cost_per_m = 0.35
+output_cost_per_m = 1.5
+supports_streaming = true
+
+[[models]]
+id = "openrouter/sakana/sakana-namazu"
+display_name = "Sakana: Sakana Namazu (OpenRouter)"
+tier = "smart"
+context_window = 262144
+max_output_tokens = 65536
+input_cost_per_m = 0.95
+output_cost_per_m = 4.0
+supports_streaming = true
