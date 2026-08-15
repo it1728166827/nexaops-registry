@@ -797,3 +797,13 @@ max_output_tokens = 32768
 input_cost_per_m = 0.0
 output_cost_per_m = 0.0
 supports_streaming = true
+
+[[models]]
+id = "openrouter/dots-studio/dots-3-note-preview:free"
+display_name = "Dots Studio: Dots3-Note Preview (free) (OpenRouter)"
+tier = "fast"
+context_window = 512000
+max_output_tokens = 512000
+input_cost_per_m = 0.0
+output_cost_per_m = 0.0
+supports_streaming = true
