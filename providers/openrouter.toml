@@ -857,3 +857,23 @@ max_output_tokens = 32768
 input_cost_per_m = 0.0
 output_cost_per_m = 0.0
 supports_streaming = true
+
+[[models]]
+id = "openrouter/meta/muse-glimmer-30b:batch"
+display_name = "Meta: Muse Glimmer 30B (batch) (OpenRouter)"
+tier = "fast"
+context_window = 131072
+max_output_tokens = 117964
+input_cost_per_m = 0.35
+output_cost_per_m = 1.5
+supports_streaming = true
+
+[[models]]
+id = "openrouter/thinkingmachines/inkling-small:batch"
+display_name = "Thinking Machines: Inkling Small (batch) (OpenRouter)"
+tier = "smart"
+context_window = 524288
+max_output_tokens = 471859
+input_cost_per_m = 0.5
+output_cost_per_m = 1.2
+supports_streaming = true
