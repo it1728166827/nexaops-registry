@@ -877,3 +877,23 @@ max_output_tokens = 471859
 input_cost_per_m = 0.5
 output_cost_per_m = 1.2
 supports_streaming = true
+
+[[models]]
+id = "openrouter/meta/muse-spark-1.3"
+display_name = "Meta: Muse Spark 1.3 (OpenRouter)"
+tier = "smart"
+context_window = 1048576
+max_output_tokens = 943718
+input_cost_per_m = 1.25
+output_cost_per_m = 4.25
+supports_streaming = true
+
+[[models]]
+id = "openrouter/meta/muse-spark-1.3-contributor"
+display_name = "Meta: Muse Spark 1.3 Contributor (OpenRouter)"
+tier = "fast"
+context_window = 1048576
+max_output_tokens = 943718
+input_cost_per_m = 0.1
+output_cost_per_m = 0.2
+supports_streaming = true
