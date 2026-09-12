@@ -967,3 +967,33 @@ max_output_tokens = 128000
 input_cost_per_m = 5.0
 output_cost_per_m = 30.0
 supports_streaming = true
+
+[[models]]
+id = "openrouter/inclusionai/ling-3.0-flash-vl"
+display_name = "inclusionAI: Ling 3.0 Flash VL (OpenRouter)"
+tier = "fast"
+context_window = 131072
+max_output_tokens = 32768
+input_cost_per_m = 0.06
+output_cost_per_m = 0.18
+supports_streaming = true
+
+[[models]]
+id = "openrouter/inference-net/schematron-v2-small"
+display_name = "Inference.net: Schematron V2 Small (OpenRouter)"
+tier = "fast"
+context_window = 128000
+max_output_tokens = 4096
+input_cost_per_m = 0.05
+output_cost_per_m = 0.23
+supports_streaming = true
+
+[[models]]
+id = "openrouter/inference-net/schematron-v2-turbo"
+display_name = "Inference.net: Schematron V2 Turbo (OpenRouter)"
+tier = "fast"
+context_window = 128000
+max_output_tokens = 8192
+input_cost_per_m = 0.03
+output_cost_per_m = 0.15
+supports_streaming = true
