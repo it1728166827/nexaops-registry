@@ -1007,3 +1007,13 @@ max_output_tokens = 131072
 input_cost_per_m = 0.0
 output_cost_per_m = 0.0
 supports_streaming = true
+
+[[models]]
+id = "openrouter/unbiased/pareto"
+display_name = "Pareto (OpenRouter)"
+tier = "smart"
+context_window = 262144
+max_output_tokens = 131072
+input_cost_per_m = 2.5
+output_cost_per_m = 7.5
+supports_streaming = true
