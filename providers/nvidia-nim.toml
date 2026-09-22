@@ -159,8 +159,8 @@ display_name = "Nvidia: Nemotron 3 Nano 30B"
 tier = "fast"
 context_window = 131072
 max_output_tokens = 32768
-input_cost_per_m = 0.06
-output_cost_per_m = 0.24
+input_cost_per_m = 0.05
+output_cost_per_m = 0.2
 supports_streaming = true
 
 [[models]]
