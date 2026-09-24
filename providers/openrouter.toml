@@ -1047,3 +1047,13 @@ max_output_tokens = 235929
 input_cost_per_m = 0.075
 output_cost_per_m = 0.25
 supports_streaming = true
+
+[[models]]
+id = "openrouter/stealth/space-bunny-alpha"
+display_name = "Space Bunny Alpha (OpenRouter)"
+tier = "fast"
+context_window = 1000000
+max_output_tokens = 524288
+input_cost_per_m = 0.0
+output_cost_per_m = 0.0
+supports_streaming = true
