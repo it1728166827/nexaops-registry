@@ -1057,3 +1057,23 @@ max_output_tokens = 524288
 input_cost_per_m = 0.0
 output_cost_per_m = 0.0
 supports_streaming = true
+
+[[models]]
+id = "openrouter/perceptron/perceptron-mk1.5"
+display_name = "Perceptron: Perceptron Mk1.5 (OpenRouter)"
+tier = "fast"
+context_window = 36864
+max_output_tokens = 8192
+input_cost_per_m = 0.15
+output_cost_per_m = 1.5
+supports_streaming = true
+
+[[models]]
+id = "openrouter/typesafe/jev-router"
+display_name = "TypeSafe: Jev Router (OpenRouter)"
+tier = "fast"
+context_window = 1000000
+max_output_tokens = 16384
+input_cost_per_m = -1000000.0
+output_cost_per_m = -1000000.0
+supports_streaming = true
