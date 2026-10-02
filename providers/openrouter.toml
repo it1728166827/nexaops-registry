@@ -1077,3 +1077,23 @@ max_output_tokens = 16384
 input_cost_per_m = -1000000.0
 output_cost_per_m = -1000000.0
 supports_streaming = true
+
+[[models]]
+id = "openrouter/apodex/apodex-1.1-mini:free"
+display_name = "Apodex: Apodex 1.1 Mini (free) (OpenRouter)"
+tier = "fast"
+context_window = 262144
+max_output_tokens = 235929
+input_cost_per_m = 0.0
+output_cost_per_m = 0.0
+supports_streaming = true
+
+[[models]]
+id = "openrouter/unbiased/pareto-26.10-preview"
+display_name = "Pareto 26.10 Preview (OpenRouter)"
+tier = "smart"
+context_window = 1048576
+max_output_tokens = 131072
+input_cost_per_m = 0.8
+output_cost_per_m = 3.2
+supports_streaming = true
