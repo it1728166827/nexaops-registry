@@ -1097,3 +1097,13 @@ max_output_tokens = 131072
 input_cost_per_m = 0.8
 output_cost_per_m = 3.2
 supports_streaming = true
+
+[[models]]
+id = "openrouter/inclusionai/ling-3.1-flash"
+display_name = "inclusionAI: Ling 3.1 Flash (OpenRouter)"
+tier = "fast"
+context_window = 262144
+max_output_tokens = 32768
+input_cost_per_m = 0.0
+output_cost_per_m = 0.0
+supports_streaming = true
