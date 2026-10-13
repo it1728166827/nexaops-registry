@@ -1117,3 +1117,33 @@ max_output_tokens = 32768
 input_cost_per_m = 0.042
 output_cost_per_m = 0.1232
 supports_streaming = true
+
+[[models]]
+id = "openrouter/meta/muse-wonder"
+display_name = "Meta: Muse Wonder (OpenRouter)"
+tier = "frontier"
+context_window = 1048576
+max_output_tokens = 943718
+input_cost_per_m = 4.0
+output_cost_per_m = 20.0
+supports_streaming = true
+
+[[models]]
+id = "openrouter/scaledown/extract"
+display_name = "ScaleDown: Extract (OpenRouter)"
+tier = "fast"
+context_window = 1000000
+max_output_tokens = 900000
+input_cost_per_m = 0.04
+output_cost_per_m = 0.0
+supports_streaming = true
+
+[[models]]
+id = "openrouter/scaledown/summarize"
+display_name = "ScaleDown: Summarize (OpenRouter)"
+tier = "fast"
+context_window = 1000000
+max_output_tokens = 4000
+input_cost_per_m = 0.04
+output_cost_per_m = 0.0
+supports_streaming = true
