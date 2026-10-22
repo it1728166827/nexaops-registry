@@ -1237,3 +1237,13 @@ max_output_tokens = 131072
 input_cost_per_m = 0.8
 output_cost_per_m = 3.2
 supports_streaming = true
+
+[[models]]
+id = "openrouter/recursive/flint-v1.0:free"
+display_name = "Recursive: Flint (free) (OpenRouter)"
+tier = "fast"
+context_window = 262144
+max_output_tokens = 235929
+input_cost_per_m = 0.0
+output_cost_per_m = 0.0
+supports_streaming = true
