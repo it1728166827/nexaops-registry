@@ -1247,3 +1247,13 @@ max_output_tokens = 235929
 input_cost_per_m = 0.0
 output_cost_per_m = 0.0
 supports_streaming = true
+
+[[models]]
+id = "openrouter/liquid/lfm-2.5-2.6b"
+display_name = "LiquidAI: LFM2.5-2.6B (OpenRouter)"
+tier = "fast"
+context_window = 128000
+max_output_tokens = 8192
+input_cost_per_m = 0.35
+output_cost_per_m = 0.5
+supports_streaming = true
