@@ -1327,3 +1327,33 @@ max_output_tokens = 8192
 input_cost_per_m = 0.0
 output_cost_per_m = 0.0
 supports_streaming = true
+
+[[models]]
+id = "openrouter/meta/muse-ember"
+display_name = "Meta: Muse Ember (OpenRouter)"
+tier = "fast"
+context_window = 1048576
+max_output_tokens = 943718
+input_cost_per_m = 0.1
+output_cost_per_m = 0.5
+supports_streaming = true
+
+[[models]]
+id = "openrouter/nex-agi/nex-n2.6"
+display_name = "Nex AGI: Nex-N2.6 (OpenRouter)"
+tier = "fast"
+context_window = 262144
+max_output_tokens = 235929
+input_cost_per_m = 0.12
+output_cost_per_m = 0.4
+supports_streaming = true
+
+[[models]]
+id = "openrouter/thinkingmachines/inkling-2-small:free"
+display_name = "Thinking Machines: Inkling 2 Small (free) (OpenRouter)"
+tier = "fast"
+context_window = 1048576
+max_output_tokens = 131072
+input_cost_per_m = 0.0
+output_cost_per_m = 0.0
+supports_streaming = true
