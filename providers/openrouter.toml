@@ -1357,3 +1357,23 @@ max_output_tokens = 131072
 input_cost_per_m = 0.0
 output_cost_per_m = 0.0
 supports_streaming = true
+
+[[models]]
+id = "openrouter/kt/midm-k-3.0-pro"
+display_name = "KT: Mi:dm K 3.0 Pro (OpenRouter)"
+tier = "fast"
+context_window = 261795
+max_output_tokens = 235615
+input_cost_per_m = 0.2
+output_cost_per_m = 0.8
+supports_streaming = true
+
+[[models]]
+id = "openrouter/motif-technologies/motif-3"
+display_name = "Motif Technologies: Motif 3 (OpenRouter)"
+tier = "fast"
+context_window = 262144
+max_output_tokens = 235929
+input_cost_per_m = 0.3
+output_cost_per_m = 1.2
+supports_streaming = true
